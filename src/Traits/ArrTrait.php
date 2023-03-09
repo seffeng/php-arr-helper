@@ -438,4 +438,52 @@ Trait ArrTrait
 
         return $d;
     }
+
+    /**
+     * 一维数组转为层级关系数组
+     *
+     * @author zxf
+     * @date   2023-03-09
+     * @param array $array          源数组
+     * @param string $parentKey     父ID字段名称
+     * @param string $primaryKey    主键ID字段名称
+     * @param string $childKey      子节点名称
+     * @param array $column         新数组包含字段 ['id', 'name', 'parentId']，空时返回源数组所有字段
+     * @return array
+     */
+    public static function toTree(array $array, string $parentKey = 'parentId', string $primaryKey = 'id', string $childKey = 'children', array $column = [])
+    {
+        if ($column && array_search($parentKey, $column) === false) {
+            $column[] = $parentKey;
+        }
+
+        $data = [];
+        foreach ($array as $val) {
+            if ($column) {
+                $tmp = [];
+                foreach ($column as $v) {
+                    $tmp[$v] = self::getValue($val, $v);
+                }
+                $data[$val[$primaryKey]] = $tmp;
+            } else {
+                $data[$val[$primaryKey]] = $val;
+            }
+            $data[$val[$primaryKey]][$childKey] = [];
+        }
+
+        foreach ($data as $key => $val) {
+            $data[$val[$parentKey]][$childKey][] = &$data[$key];
+        }
+
+        $maxDeep = 0;
+        $k = 0;
+        foreach ($data as $key => $val) {
+            $deep = self::getDepth($val);
+            if ($deep > $maxDeep) {
+                $maxDeep = $deep;
+                $k = $key;
+            }
+        }
+        return self::getValue($data, $k . '.' . $childKey, []);
+    }
 }
