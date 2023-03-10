@@ -444,7 +444,7 @@ Trait ArrTrait
      *
      * @author zxf
      * @date   2023-03-09
-     * @param array $array          源数组
+     * @param array $array          源数组，源数组必须包含 主键ID字段 [$primaryKey] 和 父ID字段 [$parentKey]
      * @param string $parentKey     父ID字段名称
      * @param string $primaryKey    主键ID字段名称
      * @param string $childKey      子节点名称
@@ -459,31 +459,31 @@ Trait ArrTrait
 
         $data = [];
         foreach ($array as $val) {
-            if ($column) {
-                $tmp = [];
-                foreach ($column as $v) {
-                    $tmp[$v] = self::getValue($val, $v);
+            if (isset($val[$parentKey]) && isset($val[$primaryKey])) {
+                if ($column) {
+                    $tmp = [];
+                    foreach ($column as $v) {
+                        $tmp[$v] = self::getValue($val, $v);
+                    }
+                    $data[$val[$primaryKey]] = $tmp;
+                } else {
+                    $data[$val[$primaryKey]] = $val;
                 }
-                $data[$val[$primaryKey]] = $tmp;
-            } else {
-                $data[$val[$primaryKey]] = $val;
+                $data[$val[$primaryKey]][$childKey] = [];
             }
-            $data[$val[$primaryKey]][$childKey] = [];
         }
 
         foreach ($data as $key => $val) {
             $data[$val[$parentKey]][$childKey][] = &$data[$key];
         }
 
-        $maxDeep = 0;
-        $k = 0;
+        $items = [];
         foreach ($data as $key => $val) {
-            $deep = self::getDepth($val);
-            if ($deep > $maxDeep) {
-                $maxDeep = $deep;
-                $k = $key;
+            if (!isset($val[$primaryKey])) {
+                $items = self::merge($items, self::getValue($data, $key . '.' . $childKey, []));
             }
         }
-        return self::getValue($data, $k . '.' . $childKey, []);
+        $data = null;
+        return $items;
     }
 }
