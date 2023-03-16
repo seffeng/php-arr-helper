@@ -77,7 +77,7 @@ Trait ArrTrait
         if (is_object($array)) {
             // this is expected to fail if the property does not exist, or __get() is not implemented
             // it is not reliably possible to check whether a property is accessable beforehand
-            return is_null($array->$key) ? $default : $array->$key;
+            return (!isset($array->$key) || is_null($array->$key)) ? $default : $array->$key;
         } elseif (is_array($array)) {
             return (isset($array[$key]) || array_key_exists($key, $array)) ? (is_null($array[$key]) ? $default : $array[$key]) : $default;
         } else {
